@@ -1,0 +1,33 @@
+# Maven
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.log
+
+# Gradle
+.gradle/
+build/
+
+# Node/Vite
+node_modules/
+dist/
+dist-ssr/
+*.local
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# System
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.*
+!.env.example
