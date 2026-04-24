@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Data
 @TableName("relations")
@@ -15,5 +15,5 @@ public class Relation {
     private Long fromMemberId;
     private Long toMemberId;
     private String relationType;  // enum string
-    private LocalDateTime createdAt;
+    private OffsetDateTime createdAt;
 }
