@@ -1,33 +1,56 @@
-# Maven
-target/
-*.class
-*.jar
-*.war
-*.ear
-*.log
-
-# Gradle
-.gradle/
-build/
-
-# Node/Vite
-node_modules/
-dist/
-dist-ssr/
-*.local
-.vscode/
+# OS / editor
+.DS_Store
+Thumbs.db
 .idea/
+.vscode/
+*.iml
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+*.tmp
 
-# System
-.DS_Store
-Thumbs.db
+# Local tooling
+.codex
 
-# Environment
+# Environment / secrets
 .env
 .env.*
 !.env.example
+!.env.*.example
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+.python-version
+.venv/
+venv/
+env/
+ENV/
+
+# Java / Maven / Gradle
+.gradle/
+build/
+target/
+out/
+*.class
+*.jar
+*.war
+*.ear
+
+# Node / frontend
+node_modules/
+dist/
+dist-ssr/
+coverage/
+*.local
+
+# Logs
+*.log
+startup_error.txt

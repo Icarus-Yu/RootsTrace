@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.genealogy.mapper.RelationMapper">
+
+    <!-- Ancestor Trace: Recursive CTE to find all ancestors of a member -->
+    <select id="findAllAncestors" resultType="com.genealogy.dto.response.MemberNodeVO">
+        <![CDATA[
+        WITH RECURSIVE ancestors AS (
+            SELECT m.id, m.name, m.gender, m.birth_year, m.death_year, m.generation,
+                   CAST(NULL AS BIGINT) AS parent_id, 0 AS depth
+            FROM members m WHERE m.id = #{memberId}
+            UNION ALL
+            SELECT m.id, m.name, m.gender, m.birth_year, m.death_year, m.generation,
+                   r.from_member_id AS parent_id, a.depth + 1
+            FROM members m
+            JOIN relations r ON r.to_member_id = m.id
+                AND r.relation_type IN ('PARENT_SON','PARENT_DAUGHTER','MOTHER_SON','MOTHER_DAUGHTER')
+            JOIN ancestors a ON a.id = r.to_member_id
+            WHERE a.depth < 100
+        )
+        SELECT DISTINCT id, name, gender, birth_year, death_year, generation, parent_id, depth
+        FROM ancestors ORDER BY depth;
+        ]]>
+    </select>
+
+    <!-- Descendant Trace: Recursive CTE to find all direct descendants (with max depth) -->
+    <select id="findAllDescendants" resultType="com.genealogy.dto.response.MemberNodeVO">
+        <![CDATA[
+        WITH RECURSIVE descendants AS (
+            SELECT m.id, m.name, m.gender, m.birth_year, m.generation,
+                   CAST(NULL AS BIGINT) AS parent_id, 0 AS depth
+            FROM members m WHERE m.id = #{memberId}
+            UNION ALL
+            SELECT m.id, m.name, m.gender, m.birth_year, m.generation,
+                   r.from_member_id AS parent_id, d.depth + 1
+            FROM members m
+            JOIN relations r ON r.from_member_id = d.id
+                AND r.relation_type IN ('PARENT_SON','PARENT_DAUGHTER','MOTHER_SON','MOTHER_DAUGHTER')
+            JOIN descendants d ON d.id = r.from_member_id
+            WHERE d.depth < #{maxDepth}
+        )
+        SELECT id, name, gender, birth_year, generation, parent_id, depth
+        FROM descendants ORDER BY depth, id;
+        ]]>
+    </select>
+
+    <!-- Kinship Path: Bi-directional BFS to find the shortest path between two members -->
+    <select id="findKinshipPath" resultType="com.genealogy.dto.response.RelationEdgeVO">
+        <![CDATA[
+        WITH RECURSIVE path AS (
+            SELECT from_member_id, to_member_id, relation_type,
+                   ARRAY[from_member_id] AS visited,
+                   ARRAY[from_member_id::TEXT || '->' || to_member_id::TEXT] AS path_edges
+            FROM relations
+            WHERE family_id = #{familyId}
+              AND from_member_id = #{memberAId}
+            UNION ALL
+            SELECT r.from_member_id, r.to_member_id, r.relation_type,
+                   p.visited || r.from_member_id,
+                   p.path_edges || (r.from_member_id::TEXT || '->' || r.to_member_id::TEXT)
+            FROM relations r
+            JOIN path p ON r.from_member_id = p.to_member_id
+            WHERE r.family_id = #{familyId}
+              AND NOT (r.from_member_id = ANY(p.visited))
+              AND array_length(p.visited, 1) < 20
+        )
+        SELECT from_member_id, to_member_id, relation_type, path_edges
+        FROM path WHERE to_member_id = #{memberBId}
+        ORDER BY array_length(path_edges, 1) LIMIT 1;
+        ]]>
+    </select>
+
+</mapper>

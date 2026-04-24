@@ -1,0 +1,14 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/genealogy
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  sql:
+    init:
+      mode: never
+      schema-locations: classpath:db/schema.sql
+
+jwt:
+  secret: your-very-long-secret-key-at-least-256-bits
+  expiration: 86400000 # 24h
