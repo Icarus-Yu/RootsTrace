@@ -1,4 +1,4 @@
--- 鍚敤 pgcrypto 鎵╁睍锛圲UID 鐢熸垚锛
+-- 启用 pgcrypto 扩展（UUID 生成）
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- ==================== users ====================
@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS relations (
     CONSTRAINT uq_relation UNIQUE (family_id, from_member_id, to_member_id, relation_type)
 );
 
--- 鐖惰緢鍑虹敓骞寸害鏉燂紙CHECK 瑙﹀彂鍣ㄥ疄鐜帮紝鏃犳硶鐢ㄥ崟绾 CHECK 璺ㄨ锛
+-- 父辈出生年约束（CHECK 触发器实现，无法用单行 CHECK 跨行校验）
 CREATE OR REPLACE FUNCTION check_parent_birth_year()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$
 DECLARE
@@ -79,7 +79,7 @@ BEGIN
         SELECT birth_year INTO child_birth  FROM members WHERE id = NEW.to_member_id;
         IF parent_birth IS NOT NULL AND child_birth IS NOT NULL
            AND parent_birth >= child_birth THEN
-            RAISE EXCEPTION '鐖/姣嶅嚭鐢熷勾浠藉繀椤绘棭浜庡瓙濂筹紝鐖: %, 瀛: %', parent_birth, child_birth;
+            RAISE EXCEPTION '父/母出生年份必须早于子女，父: %, 子: %', parent_birth, child_birth;
         END IF;
     END IF;
     RETURN NEW;
@@ -101,18 +101,18 @@ CREATE TABLE IF NOT EXISTS audit_log (
     operated_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
--- ==================== 绱㈠紩 ====================
--- 鎴愬憳濮撳悕妯＄硦鏌ヨ锛坧g_trgm 涓夊厓缁勭储寮曪級
+-- ==================== 索引 ====================
+-- 成员姓名模糊查询（pg_trgm 三元组索引）
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 CREATE INDEX IF NOT EXISTS idx_members_name_trgm
     ON members USING GIN (name gin_trgm_ops);
 
--- 鎸夌埗鑺傜偣鏌ュ瓙鑺傜偣
+-- 按父节点查子节点
 CREATE INDEX IF NOT EXISTS idx_relations_from
     ON relations (family_id, from_member_id);
 CREATE INDEX IF NOT EXISTS idx_relations_to
     ON relations (family_id, to_member_id);
 
--- 鏃忚氨涓嬫垚鍛樹唬闄呮煡璇
+-- 族谱下成员代际查询
 CREATE INDEX IF NOT EXISTS idx_members_family_generation
     ON members (family_id, generation);
