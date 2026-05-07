@@ -8,10 +8,13 @@ import com.genealogy.dto.response.LoginResponse;
 import com.genealogy.dto.response.UserVO;
 import com.genealogy.entity.User;
 import com.genealogy.mapper.UserMapper;
+import com.genealogy.security.AuthUserPrincipal;
 import com.genealogy.util.JwtUtil;
 import jakarta.validation.Valid;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -56,10 +59,11 @@ public class AuthController {
 
     @PostMapping("/login")
     public Result<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+        String account = request.getAccount().trim();
         User user = userMapper.selectOne(new LambdaQueryWrapper<User>()
-                .eq(User::getUsername, request.getAccount())
+                .eq(User::getUsername, account)
                 .or()
-                .eq(User::getEmail, request.getAccount().trim().toLowerCase())
+                .eq(User::getEmail, account.toLowerCase())
                 .last("LIMIT 1"));
 
         if (user == null || !passwordEncoder.matches(request.getPassword(), user.getPassword())) {
@@ -68,6 +72,20 @@ public class AuthController {
 
         String token = jwtUtil.generateToken(user.getId(), user.getUsername());
         return Result.success(new LoginResponse(token, UserVO.from(user)));
+    }
+
+    @GetMapping("/me")
+    public Result<UserVO> me(Authentication authentication) {
+        if (authentication == null || !(authentication.getPrincipal() instanceof AuthUserPrincipal principal)) {
+            return Result.error(401, "未登录或登录已过期");
+        }
+
+        User user = userMapper.selectById(principal.getId());
+        if (user == null) {
+            return Result.error(401, "用户不存在");
+        }
+
+        return Result.success(UserVO.from(user));
     }
 
     private boolean existsByUsername(String username) {
