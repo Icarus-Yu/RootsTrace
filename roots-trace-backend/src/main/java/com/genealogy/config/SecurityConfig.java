@@ -28,7 +28,7 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                     .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
-                    .requestMatchers("/api/auth/me", "/api/families/**").authenticated()
+                    .requestMatchers("/api/auth/me", "/api/families/**", "/api/members/**", "/api/relations/**").authenticated()
                     .anyRequest().permitAll())
             .exceptionHandling(exception -> exception.authenticationEntryPoint((request, response, authException) -> {
                 response.setStatus(HttpStatus.UNAUTHORIZED.value());
