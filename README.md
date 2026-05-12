@@ -23,7 +23,7 @@ RootsTrace/
 
 ## ✅ 当前进度
 - **第一阶段已完成**: 后端/前端基础工程、数据库 Schema、成员与关系模型、递归 CTE 查询、大数据生成脚本。
-- **第二阶段已完成**: 注册登录、JWT 鉴权、族谱 CRUD、协作者邀请、成员 CRUD、关系新增/删除、查询权限收敛、统一异常处理。
+- **第二阶段已完成**: 注册登录、JWT 鉴权、族谱 CRUD、协作者邀请、成员 CRUD、关系新增/删除、查询权限收敛、Dashboard 统计接口、统一异常处理。
 - **第三阶段待开始**: 登录注册页、族谱列表、成员管理、查询分析、Dashboard 和 ECharts 可视化组件。
 - **第四阶段待开始**: 性能截图、ER 图、关系模式、范式分析、数据库导出和课程报告材料。
 
@@ -96,10 +96,12 @@ DELETE /api/relations/{id}
 GET    /api/query/ancestors/{memberId}
 GET    /api/query/descendants/{memberId}?depth=10
 GET    /api/query/kinship?familyId=1&a=1&b=2
+
+GET    /api/families/{familyId}/dashboard
 ```
 
 ## 后续开发计划
 1. **前端页面接入**: 实现登录、注册、族谱列表、成员管理、关系管理和查询分析页面。
 2. **ECharts 可视化**: 实现祖先树、后代树、族谱局部树和亲缘路径图。
-3. **Dashboard**: 补充总人数、性别比例、代际分布、寿命统计等后端接口和前端图表。
+3. **Dashboard**: 接入总人数、性别比例、代际分布、寿命统计等前端图表。
 4. **验收材料**: 整理 ER 图、关系模式、3NF/BCNF 分析、核心 SQL、EXPLAIN 对比截图和数据库导出文件。

@@ -26,12 +26,15 @@ RootsTrace/
 | 后端框架 | Spring Boot | 3.2.x | 生态成熟，适合快速搭建 REST API |
 | ORM | MyBatis-Plus | 3.5.x | 常规 CRUD 简洁，复杂递归 SQL 可落在 XML Mapper |
 | 后端语言 | Java | 17 LTS | 与 Spring Boot 3 兼容，长期支持 |
-| 安全认证 | Spring Security + JWT | 规划中 | 前后端分离下使用无状态 token，便于扩展 |
+| 安全认证 | Spring Security + JWT | 已接入 | 前后端分离下使用无状态 token，满足登录态和接口保护需求 |
 | 前端框架 | React | 18 | 组件化组织页面和图表 |
 | 前端工具链 | Vite + TypeScript | Vite 5 / TS 5 | 开发启动快，类型约束更清晰 |
 | UI 组件库 | Ant Design | 5.x | 表单、表格、布局能力完整 |
+| 数据请求 | Axios | 已接入 | 当前课设范围较轻，继续使用 Axios 即可，不额外引入 TanStack Query |
 | 图表库 | ECharts | 5.x | 支持 Tree、Graph 等关系可视化 |
 | 状态管理 | Zustand | 4.x | 轻量，适合认证状态和少量全局状态 |
+
+> 技术栈收敛说明：课设目标是完成简单族谱展示和 CRUD，前端暂不扩大技术栈；不新增 TanStack Query、AntV G6 等库，避免实现复杂度超过验收需要。
 
 ## 3. 功能模块
 
@@ -55,35 +58,61 @@ RootsTrace/
 - 后端基础项目已存在：`roots-trace-backend`。
 - 前端基础项目已存在：`roots-trace-frontend`。
 - 数据库 DDL 已落在 `roots-trace-backend/src/main/resources/db/schema.sql`。
-- 已实现实体：`Member`、`Relation`。
-- 已实现 Mapper：`MemberMapper`、`RelationMapper`。
-- 已实现通用响应：`Result<T>`。
-- 已实现基础接口：
+- 已实现实体：`User`、`Family`、`FamilyCollaborator`、`Member`、`Relation`。
+- 已实现 Mapper：`UserMapper`、`FamilyMapper`、`FamilyCollaboratorMapper`、`MemberMapper`、`RelationMapper`、`DashboardMapper`。
+- 已实现通用响应：`Result<T>` 和全局异常处理。
+- 已实现认证能力：
+  - `POST /api/auth/register`
+  - `POST /api/auth/login`
+  - `GET /api/auth/me`
+- 已实现族谱管理：
+  - `GET /api/families`
+  - `POST /api/families`
+  - `GET /api/families/{id}`
+  - `PUT /api/families/{id}`
+  - `DELETE /api/families/{id}`
+  - `POST /api/families/{id}/collaborators`
+- 已实现成员管理：
   - `GET /api/members/family/{familyId}`
   - `POST /api/members`
+  - `GET /api/members/{id}`
+  - `PUT /api/members/{id}`
+  - `DELETE /api/members/{id}`
+- 已实现关系管理：
+  - `POST /api/relations`
+  - `DELETE /api/relations/{id}`
+- 已实现查询与统计：
   - `GET /api/query/ancestors/{memberId}`
   - `GET /api/query/descendants/{memberId}?depth=10`
   - `GET /api/query/kinship?familyId=1&a=1&b=2`
+  - `GET /api/families/{familyId}/dashboard`
 - 已实现递归 SQL：
   - 祖先追溯
   - 后代查询
   - 亲缘路径查询雏形
+- 已实现 Dashboard 聚合统计：
+  - 总人数
+  - 性别统计
+  - 代际分布
+  - 寿命统计
+  - 关系统计
+- 已实现基础权限控制：
+  - 注册、登录开放。
+  - 族谱、成员、关系、查询、Dashboard 接口需要登录。
+  - 族谱访问支持创建者和协作者。
 - 前端已配置：
   - Axios 实例
   - Zustand 认证状态存储
   - 目录骨架和页面占位目录
-- 已有第一阶段总结：`PHASE_1_SUMMARY.md`。
+- 已有第一、二阶段总结：`PHASE_1_SUMMARY.md`、`PHASE_2_SUMMARY.md`。
 
 ### 4.2 待补齐
 
-- 用户、族谱、协作者相关实体、Mapper、Service、Controller。
-- Auth 注册登录、JWT 过滤器、当前用户上下文。
-- 成员管理完整 CRUD、分页、按姓名模糊搜索。
-- 关系管理接口，包含关系合法性校验和防环校验。
-- Dashboard 统计接口。
 - 前端页面实现：登录、注册、族谱列表、成员管理、查询页、Dashboard。
 - ECharts 组件实现：族谱树、祖先树、亲缘路径图。
-- 后端集成测试和前端构建验证。
+- Dashboard 前端图表展示。
+- 后端可继续补充少量业务测试，但不作为课设演示前置条件。
+- 课程验收材料：ER 图、关系模式、范式分析、SQL 截图、性能对比和数据库导出。
 
 ## 5. 数据库设计
 
@@ -170,7 +199,7 @@ com.genealogy
 | `GET` | `/api/query/ancestors/{memberId}` | 祖先追溯 | 已有 |
 | `GET` | `/api/query/descendants/{memberId}` | 后代查询 | 已有 |
 | `GET` | `/api/query/kinship` | 亲缘路径 | 已有雏形 |
-| `GET` | `/api/families/{id}/dashboard` | 统计面板 | P1 |
+| `GET` | `/api/families/{familyId}/dashboard` | 统计面板 | 已完成 |
 
 ### 6.3 DTO 建议
 
@@ -218,6 +247,29 @@ com.genealogy
   "fromMemberId": 10,
   "toMemberId": 20,
   "relationType": "PARENT_SON"
+}
+```
+
+Dashboard 响应：
+
+```json
+{
+  "totalMembers": 128,
+  "maleCount": 70,
+  "femaleCount": 58,
+  "generationStats": [
+    { "generation": 1, "count": 2 },
+    { "generation": 2, "count": 6 }
+  ],
+  "lifespanStats": {
+    "averageLifespan": 72.4,
+    "maxLifespan": 96,
+    "minLifespan": 43
+  },
+  "relationStats": [
+    { "relationType": "PARENT_SON", "count": 60 },
+    { "relationType": "SPOUSE", "count": 20 }
+  ]
 }
 ```
 
@@ -381,7 +433,7 @@ WHERE depth = 4;
 
 ### 第一阶段：基础框架与递归查询
 
-状态：基本完成。
+状态：已完成。
 
 - 搭建后端 Spring Boot 项目。
 - 搭建前端 React + Vite 项目。
@@ -394,16 +446,22 @@ WHERE depth = 4;
 
 目标：完成可登录、可建族谱、可管理成员的闭环。
 
+状态：已完成。
+
 - 新增 `User`、`Family`、`FamilyCollaborator` 实体和 Mapper。
 - 实现注册、登录、JWT 鉴权。
 - 实现族谱 CRUD。
 - 完善成员 CRUD、分页和搜索。
 - 实现关系新增和删除。
 - 补充统一异常处理和参数校验。
+- 收敛查询和 Dashboard 接口权限。
+- 实现 Dashboard 聚合统计接口。
 
 ### 第三阶段：前端页面与可视化
 
 目标：让系统具备可演示的完整界面。
+
+状态：待开始。
 
 - 实现登录、注册页面。
 - 实现 Dashboard 页面。
@@ -411,6 +469,12 @@ WHERE depth = 4;
 - 实现祖先查询、后代查询、亲缘路径查询页面。
 - 接入 ECharts Tree 和 Graph。
 - 完成空状态、加载态、错误提示。
+
+范围控制：
+
+- 数据请求继续使用 Axios，不引入 TanStack Query。
+- 关系可视化继续使用 ECharts，不引入 AntV G6。
+- 优先保证 CRUD 和简单族谱展示可演示，不追求复杂大图交互。
 
 ### 第四阶段：性能、测试与报告材料
 
@@ -482,7 +546,7 @@ pg_dump -U postgres genealogy > genealogy_backup.sql
 | 图形化界面 | 未完成 | 前端页面仍需实现 |
 | 族谱树可视化 | 未完成 | ECharts Tree 组件待实现 |
 | 亲缘路径可视化 | 未完成 | ECharts Graph 组件待实现 |
-| Dashboard 统计 | 未完成 | 后端接口和前端图表待实现 |
+| Dashboard 统计 | 部分完成 | 后端接口已完成，前端图表待实现 |
 | 实验报告个人贡献 | 未完成 | 课程提交前补齐 |
 | 数据库导出文件 | 未完成 | 课程提交前导出 `.sql` |
 
