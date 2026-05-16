@@ -13,6 +13,7 @@ import jakarta.validation.Valid;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -42,6 +43,22 @@ public class RelationController {
         this.relationMapper = relationMapper;
         this.memberMapper = memberMapper;
         this.authContextService = authContextService;
+    }
+
+    @GetMapping("/family/{familyId}")
+    public Result<List<Relation>> listRelations(@PathVariable Long familyId, Authentication authentication) {
+        AuthUserPrincipal currentUser = authContextService.getCurrentUser(authentication);
+        if (currentUser == null) {
+            return Result.error(401, "未登录或登录已过期");
+        }
+        if (!authContextService.canAccessFamily(familyId, currentUser)) {
+            return Result.error(403, "无权查看该族谱关系");
+        }
+
+        List<Relation> relations = relationMapper.selectList(new LambdaQueryWrapper<Relation>()
+                .eq(Relation::getFamilyId, familyId)
+                .orderByAsc(Relation::getId));
+        return Result.success(relations);
     }
 
     @PostMapping
