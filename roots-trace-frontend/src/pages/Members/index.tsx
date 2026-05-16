@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Button, Card, Form, Input, InputNumber, Modal, Popconfirm, Select, Space, Table, Tabs, Typography, message } from 'antd';
+import { Avatar, Button, Card, Form, Input, InputNumber, Modal, Popconfirm, Select, Space, Table, Tabs, Tag, Typography, message } from 'antd';
 import { DeleteOutlined, EditOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useParams } from 'react-router-dom';
 import { memberApi, relationApi } from '../../api/services';
@@ -137,13 +137,13 @@ const Members = () => {
   };
 
   return (
-    <div>
-      <Space style={{ width: '100%', justifyContent: 'space-between', marginBottom: 16 }}>
+    <div className="rt-page">
+      <div className="rt-page-header">
         <div>
-          <Title level={4} style={{ margin: 0 }}>成员管理</Title>
-          <Text type="secondary">族谱 #{familyId} 的成员、搜索和关系维护。</Text>
+          <Title level={4} className="rt-page-title">成员管理</Title>
+          <Text className="rt-page-subtitle">族谱 #{familyId} 的成员、搜索和关系维护。</Text>
         </div>
-        <Space>
+        <div className="rt-actions">
           <Button icon={<ReloadOutlined />} onClick={() => fetchMembers(1)}>
             刷新
           </Button>
@@ -153,8 +153,8 @@ const Members = () => {
           <Button icon={<PlusOutlined />} onClick={() => setRelationModalOpen(true)}>
             新增关系
           </Button>
-        </Space>
-      </Space>
+        </div>
+      </div>
 
       <Tabs
         items={[
@@ -162,8 +162,8 @@ const Members = () => {
             key: 'members',
             label: '成员',
             children: (
-              <Card>
-                <Space style={{ marginBottom: 16 }}>
+              <Card className="rt-card" styles={{ body: { padding: 18 } }}>
+                <Space className="rt-filter-row">
                   <Input.Search
                     allowClear
                     placeholder="按姓名搜索"
@@ -187,8 +187,28 @@ const Members = () => {
                   }}
                   columns={[
                     { title: 'ID', dataIndex: 'id', width: 80 },
-                    { title: '姓名', dataIndex: 'name' },
-                    { title: '性别', dataIndex: 'gender', render: (value) => (value === 'M' ? '男' : '女') },
+                    {
+                      title: '姓名',
+                      dataIndex: 'name',
+                      render: (value, record) => (
+                        <Space>
+                          <Avatar className={record.gender === 'M' ? 'rt-gender-male' : 'rt-gender-female'}>
+                            {value?.slice(0, 1)}
+                          </Avatar>
+                          <div>
+                            <div style={{ fontWeight: 700 }}>{value}</div>
+                            <Text type="secondary">第 {record.generation} 代</Text>
+                          </div>
+                        </Space>
+                      ),
+                    },
+                    {
+                      title: '性别',
+                      dataIndex: 'gender',
+                      render: (value) => (
+                        <Tag color={value === 'M' ? 'blue' : 'magenta'}>{value === 'M' ? '男' : '女'}</Tag>
+                      ),
+                    },
                     { title: '出生年', dataIndex: 'birthYear', render: (value) => value || '-' },
                     { title: '死亡年', dataIndex: 'deathYear', render: (value) => value || '-' },
                     { title: '代际', dataIndex: 'generation' },
@@ -215,14 +235,18 @@ const Members = () => {
             key: 'relations',
             label: '关系',
             children: (
-              <Card>
+              <Card className="rt-card" styles={{ body: { padding: 18 } }}>
                 <Table
                   rowKey="id"
                   dataSource={relations}
                   columns={[
                     { title: '起点成员', dataIndex: 'fromMemberId', render: (value) => `${memberNameMap.get(value) || '成员'} #${value}` },
                     { title: '终点成员', dataIndex: 'toMemberId', render: (value) => `${memberNameMap.get(value) || '成员'} #${value}` },
-                    { title: '关系', dataIndex: 'relationType', render: (value: RelationType) => relationLabels[value] },
+                    {
+                      title: '关系',
+                      dataIndex: 'relationType',
+                      render: (value: RelationType) => <Tag color="cyan">{relationLabels[value]}</Tag>,
+                    },
                     {
                       title: '操作',
                       width: 120,

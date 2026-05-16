@@ -51,12 +51,29 @@ def generate_family(family_id: int, target_size: int, generations: int):
             
     return members, relations
 
-def setup_base_data():
-    cur.execute("TRUNCATE TABLE members, relations, families, users CASCADE")
-    cur.execute("INSERT INTO users (id, username, email, password) VALUES (1, 'admin', 'admin@example.com', 'admin') ON CONFLICT (id) DO NOTHING")
+def setup_base_data(target_username='ica'):
+    # Do not truncate 'users' table to keep registered accounts
+    cur.execute("TRUNCATE TABLE members, relations, families CASCADE")
+
+    # Check if target user exists
+    cur.execute("SELECT id FROM users WHERE username = %s", (target_username,))
+    res = cur.fetchone()
+
+    if res:
+        owner_id = res[0]
+        print(f"Using existing user '{target_username}' with ID: {owner_id}")
+    else:
+        # Fallback: create user if not exists
+        cur.execute("INSERT INTO users (username, email, password) VALUES (%s, %s, %s) RETURNING id", 
+                    (target_username, f"{target_username}@example.com", "password123"))
+        owner_id = cur.fetchone()[0]
+        print(f"Created new user '{target_username}' with ID: {owner_id}")
+
     for fid in range(1, 11):
-        cur.execute("INSERT INTO families (id, name, owner_id) VALUES (%s, %s, %s) ON CONFLICT (id) DO NOTHING", (fid, f'Family_{fid}', 1))
+        cur.execute("INSERT INTO families (id, name, owner_id) VALUES (%s, %s, %s) ON CONFLICT (id) DO NOTHING", 
+                    (fid, f'Family_{fid}', owner_id))
     conn.commit()
+    return owner_id
 
 def bulk_insert(members, relations):
     m_buf = io.StringIO()
@@ -74,7 +91,10 @@ def bulk_insert(members, relations):
     cur.copy_from(r_buf, 'relations', columns=('family_id','from_member_id','to_member_id','relation_type'), sep=',')
     conn.commit()
 
-setup_base_data()
+# Main execution
+target_user = 'ica' 
+setup_base_data(target_user)
+
 for fid in range(1, 11):
     target = 55000 if fid == 1 else random.randint(3000, 8000)
     m, r = generate_family(fid, target, 32)

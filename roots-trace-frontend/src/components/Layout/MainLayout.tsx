@@ -1,10 +1,11 @@
-import { Layout, Menu, Button, theme } from 'antd';
+import { Layout, Menu, Button } from 'antd';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
   DashboardOutlined,
   TeamOutlined,
   SearchOutlined,
   LogoutOutlined,
+  UserOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '../../store/authStore';
 
@@ -14,9 +15,6 @@ const MainLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuthStore();
-  const {
-    token: { colorBgContainer, borderRadiusLG },
-  } = theme.useToken();
 
   const handleLogout = () => {
     logout();
@@ -50,13 +48,15 @@ const MainLayout = () => {
   };
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Sider breakpoint="lg" collapsedWidth="0">
-        <div style={{ padding: '16px', textAlign: 'center' }}>
-          <h2 style={{ color: 'white', margin: 0 }}>寻根溯源</h2>
+    <Layout className="rt-app-shell">
+      <Sider width={236} className="rt-sider">
+        <div className="rt-brand">
+          <div className="rt-brand-badge">根</div>
+          <div className="rt-brand-title">寻根溯源</div>
+          <div className="rt-brand-subtitle">Genealogy workspace</div>
         </div>
         <Menu
-          theme="dark"
+          theme="light"
           mode="inline"
           selectedKeys={getSelectedKeys()}
           items={menuItems}
@@ -65,31 +65,35 @@ const MainLayout = () => {
       </Sider>
       <Layout>
         <Header
-          style={{
-            padding: '0 24px',
-            background: colorBgContainer,
-            display: 'flex',
-            justifyContent: 'flex-end',
-            alignItems: 'center',
-          }}
+          className="rt-topbar"
         >
-          <div style={{ marginRight: 16 }}>欢迎, {user?.username || '用户'}</div>
+          <div className="rt-topbar-brand">寻根溯源</div>
+          <div className="rt-user-pill">
+            <span className="rt-avatar-chip"><UserOutlined /></span>
+            <span>{user?.username || '用户'}</span>
+          </div>
           <Button icon={<LogoutOutlined />} onClick={handleLogout}>
             退出登录
           </Button>
         </Header>
-        <Content style={{ margin: '24px 16px 0', overflow: 'initial' }}>
-          <div
-            style={{
-              padding: 24,
-              background: colorBgContainer,
-              borderRadius: borderRadiusLG,
-              minHeight: 360,
-            }}
-          >
+        <Content className="rt-content">
+          <div className="rt-page-surface">
             <Outlet />
           </div>
         </Content>
+        <nav className="rt-bottom-nav" aria-label="移动端主导航">
+          {menuItems.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              className={`rt-mobile-tab ${getSelectedKeys().includes(item.key) ? 'rt-mobile-tab-active' : ''}`}
+              onClick={() => navigate(item.key)}
+            >
+              {item.icon}
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </nav>
       </Layout>
     </Layout>
   );

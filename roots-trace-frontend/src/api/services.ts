@@ -26,6 +26,9 @@ interface DashboardVO {
 
 const unwrap = async <T>(request: Promise<{ data: ApiResult<T> }>) => {
   const response = await request;
+  if (response.data.code !== 200) {
+    throw new Error(response.data.message || '请求失败');
+  }
   return response.data.data;
 };
 

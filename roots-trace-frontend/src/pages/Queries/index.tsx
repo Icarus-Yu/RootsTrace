@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Button, Card, Col, Form, InputNumber, Row, Select, Space, Tabs, Typography, message } from 'antd';
+import { Button, Card, Col, Form, InputNumber, Row, Select, Space, Tabs, Typography, message, Skeleton } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
 import { familyApi, memberApi, queryApi } from '../../api/services';
 import AncestorTreeChart from '../../components/AncestorTree/AncestorTreeChart';
@@ -31,7 +31,9 @@ const Queries = () => {
       try {
         const list = await familyApi.list();
         setFamilies(list);
-        setFamilyId(list[0]?.id);
+        if (list.length > 0) {
+          setFamilyId(list[0].id);
+        }
       } catch (error: any) {
         message.error(error.response?.data?.message || '族谱加载失败');
       }
@@ -43,7 +45,7 @@ const Queries = () => {
     if (!familyId) return;
     const loadMembers = async () => {
       try {
-        const result = await memberApi.list(familyId, { page: 1, size: 100 });
+        const result = await memberApi.list(familyId, { page: 1, size: 200 }); // Increase size for better search
         setMembers(result.records);
         setAncestors([]);
         setDescendants([]);
@@ -96,17 +98,17 @@ const Queries = () => {
   };
 
   const memberSelect = (name: string, label: string) => (
-    <Form.Item name={name} label={label} rules={[{ required: true, message: `请选择${label}` }]}>
-      <Select showSearch optionFilterProp="label" options={memberOptions} placeholder="输入姓名或 ID 搜索" />
+    <Form.Item name={name} label={label} rules={[{ required: true, message: `请选择${label}` }]} style={{ marginBottom: 12 }}>
+      <Select showSearch optionFilterProp="label" options={memberOptions} placeholder="输入姓名或 ID 搜索" style={{ minWidth: 200 }} />
     </Form.Item>
   );
 
   return (
-    <div>
-      <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
+    <div className="rt-page">
+      <Row justify="space-between" align="middle" className="rt-page-header">
         <Col>
-          <Title level={4} style={{ margin: 0 }}>亲缘查询</Title>
-          <Text type="secondary">查询祖先、后代和两名成员间的最短亲缘路径。</Text>
+          <Title level={4} className="rt-page-title">亲缘查询</Title>
+          <Text className="rt-page-subtitle">查询祖先、后代和两名成员间的最短亲缘路径。</Text>
         </Col>
         <Col>
           <Select
@@ -125,16 +127,16 @@ const Queries = () => {
             key: 'ancestors',
             label: '祖先追溯',
             children: (
-              <Card loading={loading}>
-                <Form form={ancestorForm} layout="inline" style={{ marginBottom: 16 }}>
-                  {memberSelect('memberId', '成员')}
+              <Card className="rt-card rt-chart-card">
+                <Form form={ancestorForm} layout="inline" style={{ marginBottom: 24 }}>
+                  {memberSelect('memberId', '中心成员')}
                   <Form.Item>
                     <Button type="primary" icon={<SearchOutlined />} onClick={searchAncestors}>
-                      查询
+                      查询祖先
                     </Button>
                   </Form.Item>
                 </Form>
-                <AncestorTreeChart nodes={ancestors} />
+                {loading ? <Skeleton active paragraph={{ rows: 12 }} /> : <AncestorTreeChart nodes={ancestors} />}
               </Card>
             ),
           },
@@ -142,19 +144,19 @@ const Queries = () => {
             key: 'descendants',
             label: '后代查询',
             children: (
-              <Card loading={loading}>
-                <Form form={descendantForm} layout="inline" initialValues={{ depth: 10 }} style={{ marginBottom: 16 }}>
-                  {memberSelect('memberId', '成员')}
-                  <Form.Item name="depth" label="深度">
+              <Card className="rt-card rt-chart-card">
+                <Form form={descendantForm} layout="inline" initialValues={{ depth: 10 }} style={{ marginBottom: 24 }}>
+                  {memberSelect('memberId', '起始成员')}
+                  <Form.Item name="depth" label="搜索代数">
                     <InputNumber min={1} max={100} />
                   </Form.Item>
                   <Form.Item>
                     <Button type="primary" icon={<SearchOutlined />} onClick={searchDescendants}>
-                      查询
+                      展开后代
                     </Button>
                   </Form.Item>
                 </Form>
-                <FamilyTreeChart nodes={descendants} />
+                {loading ? <Skeleton active paragraph={{ rows: 12 }} /> : <FamilyTreeChart nodes={descendants} />}
               </Card>
             ),
           },
@@ -162,19 +164,23 @@ const Queries = () => {
             key: 'kinship',
             label: '亲缘路径',
             children: (
-              <Card loading={loading}>
-                <Form form={kinshipForm} layout="inline" style={{ marginBottom: 16 }}>
+              <Card className="rt-card rt-chart-card">
+                <Form form={kinshipForm} layout="inline" style={{ marginBottom: 24 }}>
                   {memberSelect('memberAId', '成员 A')}
                   {memberSelect('memberBId', '成员 B')}
                   <Form.Item>
                     <Button type="primary" icon={<SearchOutlined />} onClick={searchKinship}>
-                      查询
+                      计算路径
                     </Button>
                   </Form.Item>
                 </Form>
-                <Space direction="vertical" style={{ width: '100%' }}>
-                  <KinshipPathChart pathEdges={kinship?.pathEdges} members={members} />
-                </Space>
+                {loading ? (
+                  <Skeleton active paragraph={{ rows: 12 }} />
+                ) : (
+                  <Space direction="vertical" style={{ width: '100%' }}>
+                    <KinshipPathChart pathEdges={kinship?.pathEdges} members={members} />
+                  </Space>
+                )}
               </Card>
             ),
           },

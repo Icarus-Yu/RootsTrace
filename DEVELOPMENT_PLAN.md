@@ -15,7 +15,9 @@ RootsTrace/
 ├── scripts/                  # 数据生成和辅助脚本
 ├── genealogy_dev_doc.docx    # 原始开发文档
 ├── README.md
-└── PHASE_1_SUMMARY.md
+├── PHASE_1_SUMMARY.md
+├── PHASE_2_SUMMARY.md
+└── PHASE_3_SUMMARY.md
 ```
 
 ## 2. 技术选型
@@ -46,7 +48,7 @@ RootsTrace/
 | 关系管理 | 父子、父女、母子、母女、配偶关系 | 血缘关系有方向，配偶关系建议双向存储或在查询层统一处理 |
 | 祖先追溯 | 给定成员向上查询所有祖先 | 使用递归 CTE，限制最大深度避免异常环路 |
 | 后代查询 | 给定成员向下查询直系后代 | 支持 `depth` 参数，默认 10 代 |
-| 亲缘路径 | 两名成员间最短亲缘路径 | 当前已有 SQL 雏形，后续需补足双向边和路径节点还原 |
+| 亲缘路径 | 两名成员间最短亲缘路径 | 已将关系边双向展开，支持父母、子女、配偶方向混合路径 |
 | 树形可视化 | 族谱树、祖先树、亲缘路径图 | ECharts Tree 展示纵向族谱，Graph 展示成员路径 |
 | Dashboard | 总人数、性别比例、代际分布、寿命统计 | 作为数据库实验统计分析和前端图表展示入口 |
 | 审计日志 | 记录核心增删改操作 | 可先实现数据库表，再逐步补充切面或服务层记录 |
@@ -79,6 +81,7 @@ RootsTrace/
   - `PUT /api/members/{id}`
   - `DELETE /api/members/{id}`
 - 已实现关系管理：
+  - `GET /api/relations/family/{familyId}`
   - `POST /api/relations`
   - `DELETE /api/relations/{id}`
 - 已实现查询与统计：
@@ -89,7 +92,7 @@ RootsTrace/
 - 已实现递归 SQL：
   - 祖先追溯
   - 后代查询
-  - 亲缘路径查询雏形
+  - 亲缘路径查询，查询时展开双向关系边
 - 已实现 Dashboard 聚合统计：
   - 总人数
   - 性别统计
@@ -100,19 +103,23 @@ RootsTrace/
   - 注册、登录开放。
   - 族谱、成员、关系、查询、Dashboard 接口需要登录。
   - 族谱访问支持创建者和协作者。
-- 前端已配置：
+- 前端已实现：
   - Axios 实例
+  - API service 封装
   - Zustand 认证状态存储
-  - 目录骨架和页面占位目录
-- 已有第一、二阶段总结：`PHASE_1_SUMMARY.md`、`PHASE_2_SUMMARY.md`。
+  - 登录、注册页面
+  - 族谱管理页面
+  - 成员和关系管理页面
+  - 查询分析页面
+  - Dashboard 页面
+  - `FamilyTreeChart`、`AncestorTreeChart`、`KinshipPathChart`
+- 已有阶段总结：`PHASE_1_SUMMARY.md`、`PHASE_2_SUMMARY.md`、`PHASE_3_SUMMARY.md`。
 
 ### 4.2 待补齐
 
-- 前端页面实现：登录、注册、族谱列表、成员管理、查询页、Dashboard。
-- ECharts 组件实现：族谱树、祖先树、亲缘路径图。
-- Dashboard 前端图表展示。
 - 后端可继续补充少量业务测试，但不作为课设演示前置条件。
 - 课程验收材料：ER 图、关系模式、范式分析、SQL 截图、性能对比和数据库导出。
+- 大数据体验优化：成员远程搜索、族谱树局部懒加载、前端 chunk 拆分。
 
 ## 5. 数据库设计
 
@@ -194,6 +201,7 @@ com.genealogy
 | `POST` | `/api/members` | 新增成员 | 已有雏形 |
 | `PUT` | `/api/members/{id}` | 更新成员 | P0 |
 | `DELETE` | `/api/members/{id}` | 删除成员 | P0 |
+| `GET` | `/api/relations/family/{familyId}` | 族谱关系列表 | 已完成 |
 | `POST` | `/api/relations` | 新增关系 | P0 |
 | `DELETE` | `/api/relations/{id}` | 删除关系 | P1 |
 | `GET` | `/api/query/ancestors/{memberId}` | 祖先追溯 | 已有 |
@@ -429,6 +437,14 @@ WHERE depth = 4;
 
 验收材料中建议保留有索引和无索引两组 `EXPLAIN ANALYZE` 截图，说明 `pg_trgm` 和关系索引对查询性能的影响。
 
+已补充脚本：
+
+```bash
+psql -d genealogy -v family_id=1 -v ancestor_id=1 -v target_depth=3 -f scripts/performance_compare.sql
+```
+
+该脚本会先删除 `idx_relations_from`、`idx_relations_to` 执行无索引四代查询，再重建索引执行有索引查询，并输出两组 `EXPLAIN (ANALYZE, BUFFERS, VERBOSE)`。
+
 ## 9. 阶段计划
 
 ### 第一阶段：基础框架与递归查询
@@ -461,7 +477,7 @@ WHERE depth = 4;
 
 目标：让系统具备可演示的完整界面。
 
-状态：待开始。
+状态：已完成基础闭环。
 
 - 实现登录、注册页面。
 - 实现 Dashboard 页面。
@@ -480,9 +496,11 @@ WHERE depth = 4;
 
 目标：完成数据库课程验收所需证据。
 
+状态：进行中。
+
 - 生成 100,000+ 条模拟成员数据。
 - 执行核心 SQL 和递归查询截图。
-- 执行索引性能对比截图。
+- 执行索引性能对比截图，脚本已提供：`scripts/performance_compare.sql`。
 - 导出数据库 `.sql` 文件。
 - 补充 ER 图、关系模式、3NF/BCNF 分析。
 - 编写个人贡献和实验总结。
@@ -542,11 +560,11 @@ pg_dump -U postgres genealogy > genealogy_backup.sql
 | COPY 批量导入导出 | 未完成 | 需要控制台或数据库截图 |
 | 5 条核心 SQL | 部分完成 | 文档已有，需落到可执行脚本或报告 |
 | 递归 CTE 祖先查询 | 已完成基础版 | 需要演示截图 |
-| 索引 EXPLAIN 对比 | 未完成 | 需要有无索引两组结果 |
-| 图形化界面 | 未完成 | 前端页面仍需实现 |
-| 族谱树可视化 | 未完成 | ECharts Tree 组件待实现 |
-| 亲缘路径可视化 | 未完成 | ECharts Graph 组件待实现 |
-| Dashboard 统计 | 部分完成 | 后端接口已完成，前端图表待实现 |
+| 索引 EXPLAIN 对比 | 部分完成 | 已有脚本，需运行并截图 |
+| 图形化界面 | 已完成基础版 | 登录、族谱、成员、查询、Dashboard 已接入 |
+| 族谱树可视化 | 已完成基础版 | ECharts Tree 组件已实现 |
+| 亲缘路径可视化 | 已完成基础版 | ECharts Graph 组件已实现 |
+| Dashboard 统计 | 已完成基础版 | 后端接口和前端图表已接入 |
 | 实验报告个人贡献 | 未完成 | 课程提交前补齐 |
 | 数据库导出文件 | 未完成 | 课程提交前导出 `.sql` |
 
@@ -564,4 +582,9 @@ pg_dump -U postgres genealogy > genealogy_backup.sql
 
 ## 13. 下一步建议
 
-优先完成第二阶段的后端闭环：认证、族谱、成员、关系。完成后再做前端页面接入和图表，否则界面容易因为接口契约变化反复调整。
+当前核心系统已具备可演示闭环，下一步优先整理课程验收材料：
+
+1. 运行 `scripts/data_generator.py`，保留 100,000+ 成员、单族谱 30+ 代的控制台或 SQL 证明。
+2. 运行 `scripts/performance_compare.sql`，保留有/无索引的 `EXPLAIN ANALYZE` 结果截图。
+3. 绘制 ER 图，整理关系模式、函数依赖和 3NF/BCNF 分析。
+4. 导出数据库 `.sql` 文件，并补充个人贡献和实验总结。

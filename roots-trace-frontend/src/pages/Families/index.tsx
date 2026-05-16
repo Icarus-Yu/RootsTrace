@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, Card, DatePicker, Form, Input, Modal, Popconfirm, Space, Table, Typography, message } from 'antd';
+import { Avatar, Button, Card, DatePicker, Form, Input, Modal, Popconfirm, Space, Table, Typography, message } from 'antd';
 import { DeleteOutlined, EditOutlined, PlusOutlined, TeamOutlined, UserAddOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useNavigate } from 'react-router-dom';
@@ -95,24 +95,40 @@ const Families = () => {
   };
 
   return (
-    <div>
-      <Space style={{ width: '100%', justifyContent: 'space-between', marginBottom: 16 }}>
+    <div className="rt-page">
+      <div className="rt-page-header">
         <div>
-          <Title level={4} style={{ margin: 0 }}>族谱管理</Title>
-          <Text type="secondary">管理你创建或协作的族谱，并进入成员维护。</Text>
+          <Title level={4} className="rt-page-title">族谱管理</Title>
+          <Text className="rt-page-subtitle">管理你创建或协作的族谱，并进入成员维护。</Text>
         </div>
-        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-          新建族谱
-        </Button>
-      </Space>
+        <div className="rt-actions">
+          <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+            新建族谱
+          </Button>
+        </div>
+      </div>
 
-      <Card>
+      <Card className="rt-card" styles={{ body: { padding: 0 } }}>
         <Table
           rowKey="id"
           loading={loading}
           dataSource={families}
           columns={[
-            { title: '族谱名称', dataIndex: 'name' },
+            {
+              title: '族谱名称',
+              dataIndex: 'name',
+              render: (value, record) => (
+                <Space>
+                  <Avatar style={{ background: '#e8f5fd', color: '#168acd', fontWeight: 700 }}>
+                    {(record.surname || value || '族').slice(0, 1)}
+                  </Avatar>
+                  <div>
+                    <div style={{ fontWeight: 700 }}>{value}</div>
+                    <Text type="secondary">ID #{record.id}</Text>
+                  </div>
+                </Space>
+              ),
+            },
             { title: '姓氏', dataIndex: 'surname', render: (value) => value || '-' },
             { title: '编修日期', dataIndex: 'compiledAt', render: (value) => value || '-' },
             {

@@ -33,7 +33,11 @@ const KinshipPathChart = ({ pathEdges = [], members }: Props) => {
                 id: String(id),
                 name: member ? `${member.name}\n#${id}` : `成员 #${id}`,
                 symbolSize: 54,
-                itemStyle: { color: member?.gender === 'F' ? '#d56b8a' : '#4078c0' },
+                itemStyle: {
+                  color: member?.gender === 'F' ? '#d84f8b' : '#229ed9',
+                  shadowBlur: 10,
+                  shadowColor: 'rgba(34, 158, 217, 0.18)',
+                },
               };
             }),
             links: pathEdges.map((edge) => {
@@ -43,7 +47,7 @@ const KinshipPathChart = ({ pathEdges = [], members }: Props) => {
             edgeSymbol: ['circle', 'arrow'],
             edgeSymbolSize: [4, 10],
             label: { show: true },
-            lineStyle: { width: 2, color: '#597ef7' },
+            lineStyle: { width: 2, color: '#66bde8' },
           },
         ],
       }}
