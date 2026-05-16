@@ -44,24 +44,31 @@
         ]]>
     </select>
 
-    <!-- Kinship Path: Bi-directional BFS to find the shortest path between two members -->
+    <!-- Kinship Path: expand each relation as a bidirectional edge, then find the shortest path -->
     <select id="findKinshipPath" resultType="com.genealogy.dto.response.RelationEdgeVO">
         <![CDATA[
-        WITH RECURSIVE path AS (
-            SELECT from_member_id, to_member_id, relation_type,
-                   ARRAY[from_member_id] AS visited,
-                   ARRAY[from_member_id::TEXT || '->' || to_member_id::TEXT] AS path_edges
+        WITH RECURSIVE edges AS (
+            SELECT from_member_id, to_member_id, relation_type
             FROM relations
             WHERE family_id = #{familyId}
-              AND from_member_id = #{memberAId}
+            UNION
+            SELECT to_member_id AS from_member_id, from_member_id AS to_member_id, relation_type
+            FROM relations
+            WHERE family_id = #{familyId}
+        ),
+        path AS (
+            SELECT e.from_member_id, e.to_member_id, e.relation_type,
+                   ARRAY[e.from_member_id, e.to_member_id] AS visited,
+                   ARRAY[e.from_member_id::TEXT || '->' || e.to_member_id::TEXT] AS path_edges
+            FROM edges e
+            WHERE e.from_member_id = #{memberAId}
             UNION ALL
-            SELECT r.from_member_id, r.to_member_id, r.relation_type,
-                   p.visited || r.from_member_id,
-                   p.path_edges || (r.from_member_id::TEXT || '->' || r.to_member_id::TEXT)
-            FROM relations r
-            JOIN path p ON r.from_member_id = p.to_member_id
-            WHERE r.family_id = #{familyId}
-              AND NOT (r.from_member_id = ANY(p.visited))
+            SELECT e.from_member_id, e.to_member_id, e.relation_type,
+                   p.visited || e.to_member_id,
+                   p.path_edges || (e.from_member_id::TEXT || '->' || e.to_member_id::TEXT)
+            FROM edges e
+            JOIN path p ON e.from_member_id = p.to_member_id
+            WHERE NOT (e.to_member_id = ANY(p.visited))
               AND array_length(p.visited, 1) < 20
         )
         SELECT from_member_id, to_member_id, relation_type, path_edges

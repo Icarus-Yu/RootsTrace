@@ -1,16 +1,21 @@
 import { Button, Card, Form, Input, Typography, message } from 'antd';
 import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+import { authApi } from '../../api/services';
 
 const { Title } = Typography;
 
 const Register = () => {
   const navigate = useNavigate();
 
-  const onFinish = (values: any) => {
-    console.log('Received values of form: ', values);
-    message.success('注册请求已发送（暂未对接后端）');
-    navigate('/login');
+  const onFinish = async (values: { username: string; email: string; password: string }) => {
+    try {
+      await authApi.register(values);
+      message.success('注册成功，请登录');
+      navigate('/login');
+    } catch (error: any) {
+      message.error(error.response?.data?.message || '注册失败');
+    }
   };
 
   return (

@@ -2,6 +2,7 @@ import { Button, Card, Form, Input, Typography, message } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
+import { authApi } from '../../api/services';
 
 const { Title } = Typography;
 
@@ -9,12 +10,15 @@ const Login = () => {
   const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.setAuth);
 
-  const onFinish = (values: any) => {
-    console.log('Received values of form: ', values);
-    // Mock login for now
-    setAuth('mock-jwt-token', { id: 1, username: values.username });
-    message.success('登录成功');
-    navigate('/dashboard');
+  const onFinish = async (values: { account: string; password: string }) => {
+    try {
+      const result = await authApi.login(values);
+      setAuth(result.token, result.user);
+      message.success('登录成功');
+      navigate('/dashboard');
+    } catch (error: any) {
+      message.error(error.response?.data?.message || '登录失败');
+    }
   };
 
   return (
@@ -33,10 +37,10 @@ const Login = () => {
         </div>
         <Form name="login" onFinish={onFinish} size="large">
           <Form.Item
-            name="username"
-            rules={[{ required: true, message: '请输入用户名' }]}
+            name="account"
+            rules={[{ required: true, message: '请输入用户名或邮箱' }]}
           >
-            <Input prefix={<UserOutlined />} placeholder="用户名" />
+            <Input prefix={<UserOutlined />} placeholder="用户名或邮箱" />
           </Form.Item>
           <Form.Item
             name="password"
