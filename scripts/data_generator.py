@@ -1,9 +1,25 @@
 import psycopg2, random, io, csv
+from psycopg2 import sql
 from faker import Faker
 
 fake = Faker('zh_CN')
 conn = psycopg2.connect(dbname='genealogy', user='postgres', password='postgres', host='localhost')
 cur = conn.cursor()
+
+def sync_serial_sequences():
+    """Keep BIGSERIAL sequences in sync after COPY/explicit-id imports."""
+    for table in ('families', 'members', 'relations'):
+        cur.execute(
+            sql.SQL("""
+            SELECT setval(
+                pg_get_serial_sequence(%s, 'id'),
+                COALESCE((SELECT MAX(id) FROM {table}), 1),
+                (SELECT MAX(id) IS NOT NULL FROM {table})
+            )
+            """).format(table=sql.Identifier(table)),
+            (table,),
+        )
+    conn.commit()
 
 def generate_family(family_id: int, target_size: int, generations: int):
     """Generates members and relations for a family tree with a specific target size"""
@@ -53,7 +69,7 @@ def generate_family(family_id: int, target_size: int, generations: int):
 
 def setup_base_data(target_username='ica'):
     # Do not truncate 'users' table to keep registered accounts
-    cur.execute("TRUNCATE TABLE members, relations, families CASCADE")
+    cur.execute("TRUNCATE TABLE members, relations, families RESTART IDENTITY CASCADE")
 
     # Check if target user exists
     cur.execute("SELECT id FROM users WHERE username = %s", (target_username,))
@@ -101,5 +117,6 @@ for fid in range(1, 11):
     bulk_insert(m, r)
     print(f'Family {fid}: {len(m)} members, {len(r)} relations')
 
+sync_serial_sequences()
 cur.close(); conn.close()
 print('Data generation complete!')

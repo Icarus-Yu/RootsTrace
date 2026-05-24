@@ -35,10 +35,10 @@ const AncestorTreeChart = ({ nodes }: Props) => {
     originalData: node
   }));
 
-  const sorted = [...nodes].sort((a, b) => (a.depth ?? 0) - (b.depth ?? 0));
-  const links = sorted.slice(1).map((node, index) => ({
+  const nodeIds = new Set(nodes.map((node) => node.id));
+  const links = nodes.filter((node) => node.parentId && nodeIds.has(node.parentId)).map((node) => ({
     source: String(node.id),
-    target: String(sorted[index].id),
+    target: String(node.parentId),
     lineStyle: { width: 1.5, curveness: 0.1, color: '#9bb9cc' }
   }));
 

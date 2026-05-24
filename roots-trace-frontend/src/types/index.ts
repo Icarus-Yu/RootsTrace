@@ -58,6 +58,7 @@ export interface MemberNode {
   gender: 'M' | 'F';
   birthYear?: number;
   deathYear?: number;
+  bio?: string;
   generation?: number;
   parentId?: number;
   depth?: number;

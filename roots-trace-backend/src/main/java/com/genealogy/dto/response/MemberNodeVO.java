@@ -9,6 +9,7 @@ public class MemberNodeVO {
     private String gender;
     private Integer birthYear;
     private Integer deathYear;
+    private String bio;
     private Integer generation;
     private Long parentId;
     private Integer depth;
