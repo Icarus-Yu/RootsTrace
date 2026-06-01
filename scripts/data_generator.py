@@ -22,49 +22,94 @@ def sync_serial_sequences():
     conn.commit()
 
 def generate_family(family_id: int, target_size: int, generations: int):
-    """Generates members and relations for a family tree with a specific target size"""
+    """Generate a dense family tree: each child has both parents, couples have
+    multiple children (siblings), spouses are linked with SPOUSE edges, and a
+    small fraction of bloodline members remarry to produce half-siblings."""
     members, relations = [], []
-    member_id_start = family_id * 1000000 
-    
-    # Simple linear-ish growth with randomness to hit the target size
-    avg_per_gen = target_size // generations
-    
-    gen_members = {} 
-    current_m_id = member_id_start
-    
-    for gen in range(1, generations + 1):
-        gen_members[gen] = []
-        # First gen always 1, then grow
-        if gen == 1:
-            count = 1
-        elif gen == generations:
-            count = target_size - (current_m_id - member_id_start)
-        else:
-            # Random count that trends upwards but keeps us on track for target
-            remaining_size = target_size - (current_m_id - member_id_start)
-            remaining_gens = generations - gen + 1
-            count = random.randint(1, max(2, (remaining_size // remaining_gens) * 2))
-        
+    member_id_start = family_id * 1000000
+    current_id = member_id_start
+    gender_of: dict[int, str] = {}
+    spouse_seen: set[tuple[int, int]] = set()
+
+    def make_member(gen: int, gender: str) -> int:
+        nonlocal current_id
         base_year = 1900 - (generations - gen) * 25
-        for _ in range(count):
-            gender = random.choice(['M', 'F'])
-            birth = base_year + random.randint(0, 20)
-            death = birth + random.randint(60, 90) if random.random() > 0.3 else None
-            members.append((current_m_id, family_id, fake.name(),
-                            gender, birth, death, gen))
-            gen_members[gen].append(current_m_id)
-            current_m_id += 1
-            
-    # Generate parent-child relationships (ensure every child has one parent from prev gen)
+        birth = base_year + random.randint(0, 18)
+        death = birth + random.randint(60, 90) if random.random() > 0.3 else None
+        members.append((current_id, family_id, fake.name(), gender, birth, death, gen))
+        gender_of[current_id] = gender
+        mid = current_id
+        current_id += 1
+        return mid
+
+    def add_spouse(a: int, b: int):
+        key = (min(a, b), max(a, b))
+        if key in spouse_seen:
+            return
+        spouse_seen.add(key)
+        relations.append((family_id, a, b, 'SPOUSE'))
+
+    def add_parent_edge(parent_id: int, child_id: int, child_gender: str):
+        pg = gender_of[parent_id]
+        if pg == 'M':
+            rtype = 'PARENT_SON' if child_gender == 'M' else 'PARENT_DAUGHTER'
+        else:
+            rtype = 'MOTHER_SON' if child_gender == 'M' else 'MOTHER_DAUGHTER'
+        relations.append((family_id, parent_id, child_id, rtype))
+
+    # Gen 1: founding couple — both count as bloodline so the tree can branch
+    bloodline = {1: [make_member(1, 'M'), make_member(1, 'F')]}
+    add_spouse(bloodline[1][0], bloodline[1][1])
+    total = 2
+
     for gen in range(2, generations + 1):
-        parents = gen_members[gen - 1]
-        children = gen_members[gen]
-        if not parents: continue # Should not happen with count >= 1
-        for child_id in children:
-            parent_id = random.choice(parents)
-            rtype = random.choice(['PARENT_SON', 'PARENT_DAUGHTER'])
-            relations.append((family_id, parent_id, child_id, rtype))
-            
+        prev = bloodline[gen - 1]
+        if not prev or total >= target_size:
+            break
+
+        # Pair ~55% of previous bloodline (gender mix ≈ 50/50, so most who
+        # want to marry can find someone). Let the family grow geometrically
+        # and stop naturally when we hit target_size — do NOT cram a whole
+        # generation's "budget" onto a handful of couples.
+        couples_count = max(1, int(len(prev) * 0.55))
+        couples_count = min(couples_count, len(prev))
+        chosen = random.sample(prev, couples_count)
+
+        couples = []
+        for blood in chosen:
+            if total >= target_size:
+                break
+            g = gender_of[blood]
+            inlaw_g = 'F' if g == 'M' else 'M'
+            inlaw = make_member(gen - 1, inlaw_g)
+            total += 1
+            add_spouse(blood, inlaw)
+            father, mother = (blood, inlaw) if g == 'M' else (inlaw, blood)
+            couples.append((father, mother))
+            # ~5% remarriage → blended family with half-siblings
+            if random.random() < 0.05 and total < target_size:
+                inlaw2 = make_member(gen - 1, inlaw_g)
+                total += 1
+                add_spouse(blood, inlaw2)
+                father2, mother2 = (blood, inlaw2) if g == 'M' else (inlaw2, blood)
+                couples.append((father2, mother2))
+
+        bloodline[gen] = []
+        for father, mother in couples:
+            if total >= target_size:
+                break
+            # Realistic family size: 1–5 children, weighted toward 2–3
+            n = random.choices([1, 2, 3, 4, 5], weights=[1, 3, 4, 2, 1])[0]
+            for _ in range(n):
+                if total >= target_size:
+                    break
+                child_g = random.choice(['M', 'F'])
+                child = make_member(gen, child_g)
+                total += 1
+                add_parent_edge(father, child, child_g)
+                add_parent_edge(mother, child, child_g)
+                bloodline[gen].append(child)
+
     return members, relations
 
 def setup_base_data(target_username='ica'):

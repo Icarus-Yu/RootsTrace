@@ -3,18 +3,19 @@ import { Empty } from 'antd';
 import type { Member } from '../../types';
 
 interface Props {
-  pathEdges?: string[];
+  pathEdges?: string[] | null;
   members: Member[];
 }
 
-const KinshipPathChart = ({ pathEdges = [], members }: Props) => {
-  if (!pathEdges.length) {
+const KinshipPathChart = ({ pathEdges, members }: Props) => {
+  const edges = pathEdges ?? [];
+  if (!edges.length) {
     return <Empty description="暂无路径结果" />;
   }
 
   const memberMap = new Map(members.map((member) => [member.id, member]));
   const ids = Array.from(
-    new Set(pathEdges.flatMap((edge) => edge.split('->').map((value) => Number(value)))),
+    new Set(edges.flatMap((edge) => edge.split('->').map((value) => Number(value)))),
   ).filter(Boolean);
 
   return (
@@ -40,7 +41,7 @@ const KinshipPathChart = ({ pathEdges = [], members }: Props) => {
                 },
               };
             }),
-            links: pathEdges.map((edge) => {
+            links: edges.map((edge) => {
               const [source, target] = edge.split('->');
               return { source, target };
             }),

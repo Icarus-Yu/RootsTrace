@@ -8,6 +8,7 @@ import com.genealogy.mapper.MemberMapper;
 import com.genealogy.mapper.RelationMapper;
 import com.genealogy.security.AuthUserPrincipal;
 import com.genealogy.service.AuthContextService;
+import com.genealogy.service.KinshipPathService;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,14 +21,17 @@ public class QueryController {
     private final RelationMapper relationMapper;
     private final MemberMapper memberMapper;
     private final AuthContextService authContextService;
+    private final KinshipPathService kinshipPathService;
 
     public QueryController(
             RelationMapper relationMapper,
             MemberMapper memberMapper,
-            AuthContextService authContextService) {
+            AuthContextService authContextService,
+            KinshipPathService kinshipPathService) {
         this.relationMapper = relationMapper;
         this.memberMapper = memberMapper;
         this.authContextService = authContextService;
+        this.kinshipPathService = kinshipPathService;
     }
 
     @GetMapping("/ancestors/{memberId}")
@@ -71,7 +75,7 @@ public class QueryController {
         if (!familyId.equals(memberA.getFamilyId()) || !familyId.equals(memberB.getFamilyId())) {
             return Result.error(400, "查询成员必须属于指定族谱");
         }
-        return Result.success(relationMapper.findKinshipPath(familyId, a, b));
+        return Result.success(kinshipPathService.findShortestPath(familyId, a, b));
     }
 
     private Result<Member> validateMemberAccess(Long memberId, Authentication authentication) {
