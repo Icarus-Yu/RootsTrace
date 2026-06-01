@@ -25,11 +25,10 @@ const Login = () => {
     <div className="rt-auth-page">
       <section className="rt-auth-hero">
         <div className="rt-auth-mark">根</div>
-        <h1 className="rt-auth-heading">把家族脉络<br/>整理成清晰可查的关系网络</h1>
+        <h1 className="rt-auth-heading">把家族脉络整理成清晰可查的关系网络</h1>
         <p className="rt-auth-copy">
-          管理族谱成员，维护亲缘关系，并以图谱方式追溯祖先、查看后代与亲缘路径。基于 PostgreSQL 递归查询，支撑十万级成员、三十代以上的族谱。
+          管理族谱成员、维护亲缘关系，并用图谱方式追溯祖先、查看后代和亲缘路径。
         </p>
-        <p className="rt-auth-quote">「根之茂者其实遂，膏之沃者其光晔。」</p>
       </section>
       <section className="rt-auth-panel">
       <Card className="rt-auth-card" styles={{ body: { padding: 28 } }}>

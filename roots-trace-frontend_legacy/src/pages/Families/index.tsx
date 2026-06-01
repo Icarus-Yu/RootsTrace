@@ -119,7 +119,7 @@ const Families = () => {
               dataIndex: 'name',
               render: (value, record) => (
                 <Space>
-                  <Avatar style={{ background: 'var(--rt-paper-2)', color: 'var(--rt-ink-1)', fontFamily: 'var(--rt-font-display)', fontWeight: 500 }}>
+                  <Avatar style={{ background: '#e8f5fd', color: '#168acd', fontWeight: 700 }}>
                     {(record.surname || value || '族').slice(0, 1)}
                   </Avatar>
                   <div>

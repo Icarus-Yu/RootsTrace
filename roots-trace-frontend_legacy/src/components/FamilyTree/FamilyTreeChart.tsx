@@ -7,7 +7,7 @@ interface TreeNode {
   name: string;
   value: number;
   id: number;
-  itemStyle: { color: string };
+  itemStyle: { color: string; borderColor: string; borderWidth: number };
   children?: TreeNode[];
   originalData: MemberNode;
 }
@@ -23,7 +23,11 @@ const toTree = (nodes: MemberNode[]): TreeNode[] => {
       name: `${node.name}`,
       value: node.id,
       id: node.id,
-      itemStyle: { color: node.gender === 'M' ? '#4a6772' : '#8e5a6b' },
+      itemStyle: { 
+        color: node.gender === 'M' ? '#1f3b4d' : '#4a2531', // 深青 / 赭红
+        borderColor: '#d4af37', // 古铜金边框
+        borderWidth: 2
+      },
       children: [],
       originalData: node,
     });
@@ -74,9 +78,15 @@ const FamilyTreeChart = ({ nodes }: Props) => {
           tooltip: { 
             trigger: 'item', 
             triggerOn: 'mousemove',
+            backgroundColor: 'rgba(26, 26, 26, 0.9)',
+            borderColor: '#d4af37',
+            textStyle: { color: '#fdfbf7' },
             formatter: (params: any) => {
               const d = params.data.originalData;
-              return `${d.name}<br/>第 ${d.generation} 代<br/>${d.gender === 'M' ? '男' : '女'}`;
+              return `<div style="font-family: 'Noto Serif SC', serif; padding: 4px;">
+                <b style="font-size: 16px; color: #d4af37;">${d.name}</b><br/>
+                <span style="color: #bbb;">第 ${d.generation} 代 · ${d.gender === 'M' ? '男' : '女'}</span>
+              </div>`;
             }
           },
           series: [
@@ -87,23 +97,38 @@ const FamilyTreeChart = ({ nodes }: Props) => {
               left: 80,
               right: 180,
               bottom: 40,
-              symbolSize: 12,
-              edgeShape: 'polyline',
+              symbol: 'circle',
+              symbolSize: 16,
+              edgeShape: 'curve',
               roam: true, // Enable Zoom and Pan
-              initialTreeDepth: 2,
+              initialTreeDepth: 3,
               label: { 
                 position: 'left', 
                 verticalAlign: 'middle', 
                 align: 'right', 
-                fontSize: 12,
-                backgroundColor: 'rgba(255,255,255,0.7)',
-                padding: [4, 8],
-                borderRadius: 4
+                backgroundColor: '#fdfbf7', // 宣纸底色
+                borderColor: '#c6a87c', // 木牌/碑文边框色
+                borderWidth: 1,
+                padding: [6, 12],
+                borderRadius: 4,
+                shadowColor: 'rgba(0,0,0,0.15)',
+                shadowBlur: 8,
+                shadowOffsetX: 2,
+                shadowOffsetY: 2,
+                formatter: '{name|{b}}',
+                rich: {
+                  name: {
+                    color: '#3e2723', // 深墨色
+                    fontSize: 14,
+                    fontWeight: 'bold',
+                    fontFamily: '"Noto Serif SC", STZhongsong, serif'
+                  }
+                }
               },
               leaves: { label: { position: 'right', verticalAlign: 'middle', align: 'left' } },
-              lineStyle: { color: '#b3c1c5', width: 1.5, curveness: 0.5 },
-              emphasis: { focus: 'descendant', itemStyle: { borderWidth: 4 } },
-              animationDuration: 500,
+              lineStyle: { color: '#c6a87c', width: 2, curveness: 0.3 }, // 金色自然曲线
+              emphasis: { focus: 'descendant', itemStyle: { borderWidth: 4, borderColor: '#fff' } },
+              animationDuration: 750,
             },
           ],
         }}
@@ -120,7 +145,7 @@ const FamilyTreeChart = ({ nodes }: Props) => {
           <Descriptions column={1} bordered size="small">
             <Descriptions.Item label="姓名"><strong>{selectedMember.name}</strong></Descriptions.Item>
             <Descriptions.Item label="性别">
-              <Tag color={selectedMember.gender === 'M' ? 'blue' : 'magenta'}>
+              <Tag color={selectedMember.gender === 'M' ? 'gold' : 'volcano'}>
                 {selectedMember.gender === 'M' ? '男' : '女'}
               </Tag>
             </Descriptions.Item>

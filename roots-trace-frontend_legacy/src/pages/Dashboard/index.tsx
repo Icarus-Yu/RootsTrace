@@ -44,17 +44,17 @@ const Dashboard = () => {
   }, [familyId]);
 
   const genderOption = useMemo(() => ({
-    tooltip: { trigger: 'item', backgroundColor: 'rgba(255,255,255,0.96)', borderColor: '#ece8de', borderWidth: 1, textStyle: { color: '#18181a', fontSize: 12 }, extraCssText: 'box-shadow: 0 8px 24px rgba(24,24,26,0.08); border-radius: 8px;' },
-    legend: { bottom: 8, itemWidth: 10, itemHeight: 10, borderRadius: 5, textStyle: { color: '#3a3a3d', fontSize: 12 } },
-    color: ['#4a6772', '#8e5a6b'],
+    tooltip: { trigger: 'item', backgroundColor: 'rgba(255,255,255,0.9)', borderWeight: 0, shadowBlur: 10, shadowColor: 'rgba(0,0,0,0.1)' },
+    legend: { bottom: 10, itemWidth: 10, itemHeight: 10, borderRadius: 5 },
+    color: ['#229ed9', '#d84f8b'],
     series: [
       {
         type: 'pie',
-        radius: ['52%', '74%'],
+        radius: ['50%', '72%'],
         avoidLabelOverlap: false,
-        itemStyle: { borderRadius: 8, borderColor: '#ffffff', borderWidth: 2 },
+        itemStyle: { borderRadius: 10, borderColor: '#fff', borderWidth: 2 },
         label: { show: false },
-        emphasis: { label: { show: true, fontSize: 16, fontWeight: 600, color: '#18181a' } },
+        emphasis: { label: { show: true, fontSize: 16, fontWeight: 'bold' } },
         data: [
           { name: '男性', value: dashboard?.maleMembers ?? 0 },
           { name: '女性', value: dashboard?.femaleMembers ?? 0 },
@@ -64,45 +64,32 @@ const Dashboard = () => {
   }), [dashboard]);
 
   const generationOption = useMemo(() => ({
-    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, backgroundColor: 'rgba(255,255,255,0.96)', borderColor: '#ece8de', borderWidth: 1, textStyle: { color: '#18181a', fontSize: 12 }, extraCssText: 'box-shadow: 0 8px 24px rgba(24,24,26,0.08); border-radius: 8px;' },
-    xAxis: {
-      type: 'category',
-      data: dashboard?.generationDistribution.map((item) => `第${item.label}代`) ?? [],
-      axisTick: { show: false },
-      axisLine: { lineStyle: { color: '#ece8de' } },
-      axisLabel: { color: '#6e6e73', fontSize: 11, fontFamily: 'JetBrains Mono, monospace' },
-    },
-    yAxis: {
-      type: 'value',
-      splitLine: { lineStyle: { type: 'dashed', color: '#ece8de' } },
-      axisLabel: { color: '#a1a1a6', fontSize: 11, fontFamily: 'JetBrains Mono, monospace' },
-    },
-    grid: { left: 44, right: 20, top: 24, bottom: 36 },
-    series: [{
-      type: 'bar',
-      data: dashboard?.generationDistribution.map((item) => item.value) ?? [],
-      barWidth: '52%',
-      itemStyle: {
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    xAxis: { type: 'category', data: dashboard?.generationDistribution.map((item) => `第${item.label}代`) ?? [], axisTick: { show: false }, axisLine: { lineStyle: { color: '#dbe8f2' } } },
+    yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#f0f4f8' } } },
+    grid: { left: 40, right: 20, top: 30, bottom: 40 },
+    series: [{ 
+      type: 'bar', 
+      data: dashboard?.generationDistribution.map((item) => item.value) ?? [], 
+      barWidth: '45%',
+      itemStyle: { 
         color: {
           type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
-          colorStops: [{ offset: 0, color: '#2c4a52' }, { offset: 1, color: '#1b3036' }]
+          colorStops: [{ offset: 0, color: '#229ed9' }, { offset: 1, color: '#62c4f6' }]
         },
-        borderRadius: [6, 6, 2, 2]
-      }
+        borderRadius: [6, 6, 0, 0] 
+      } 
     }],
   }), [dashboard]);
 
   const relationOption = useMemo(() => ({
-    tooltip: { trigger: 'item', backgroundColor: 'rgba(255,255,255,0.96)', borderColor: '#ece8de', borderWidth: 1, textStyle: { color: '#18181a', fontSize: 12 }, extraCssText: 'box-shadow: 0 8px 24px rgba(24,24,26,0.08); border-radius: 8px;' },
-    legend: { bottom: 8, textStyle: { color: '#3a3a3d', fontSize: 12 } },
-    color: ['#2c4a52', '#5a7880', '#8aa0a6', '#a78a4e', '#5a6b3d'],
+    tooltip: { trigger: 'item' },
+    color: ['#229ed9', '#66c4f1', '#8fd3ff', '#55d6be', '#f0b95e'],
     series: [
       {
         type: 'pie',
-        radius: ['40%', '68%'],
-        itemStyle: { borderRadius: 6, borderColor: '#ffffff', borderWidth: 2 },
-        label: { color: '#3a3a3d', fontSize: 12 },
-        labelLine: { lineStyle: { color: '#d8d2c2' } },
+        radius: '65%',
+        itemStyle: { borderRadius: 8 },
         data: dashboard?.relationDistribution.map((item) => ({ name: item.label, value: item.value })) ?? [],
       },
     ],

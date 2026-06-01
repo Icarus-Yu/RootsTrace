@@ -52,10 +52,8 @@ const MainLayout = () => {
       <Sider width={236} className="rt-sider">
         <div className="rt-brand">
           <div className="rt-brand-badge">根</div>
-          <div className="rt-brand-text">
-            <div className="rt-brand-title">寻根溯源</div>
-            <div className="rt-brand-subtitle">RootsTrace</div>
-          </div>
+          <div className="rt-brand-title">寻根溯源</div>
+          <div className="rt-brand-subtitle">Genealogy workspace</div>
         </div>
         <Menu
           theme="light"

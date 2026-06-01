@@ -1,46 +1,14 @@
 import { RouterProvider } from 'react-router-dom';
-import { ConfigProvider, App as AntdApp } from 'antd';
-import zhCN from 'antd/locale/zh_CN';
+import { App as AntdApp } from 'antd';
 import router from './router';
 
+// Theme + locale are provided by <ConfigProvider> in main.tsx (设计系统「墨与笺」).
+// Here we only mount the AntdApp context (for message / notification / modal) and the router.
 function App() {
   return (
-    <ConfigProvider
-      locale={zhCN}
-      theme={{
-        token: {
-          colorPrimary: '#229ed9',
-          borderRadius: 14,
-          colorBgLayout: '#f4f8fb',
-          colorText: '#17212b',
-          colorTextSecondary: '#7d8b99',
-          fontFamily:
-            '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif',
-        },
-        components: {
-          Button: {
-            borderRadius: 999,
-            controlHeight: 38,
-          },
-          Card: {
-            borderRadiusLG: 22,
-          },
-          Input: {
-            borderRadius: 14,
-          },
-          Select: {
-            borderRadius: 14,
-          },
-          Modal: {
-            borderRadiusLG: 22,
-          },
-        },
-      }}
-    >
-      <AntdApp>
-        <RouterProvider router={router} />
-      </AntdApp>
-    </ConfigProvider>
+    <AntdApp>
+      <RouterProvider router={router} />
+    </AntdApp>
   );
 }
 
