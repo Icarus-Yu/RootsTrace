@@ -21,6 +21,84 @@ def sync_serial_sequences():
         )
     conn.commit()
 
+def generate_showcase_family(family_id: int, surname: str,
+                             generations: int = 12, target_size: int = 900):
+    """Showcase family for the full-tree visualization.
+
+    A clean *patrilineal* genealogy: one founding patriarch, the whole bloodline
+    carries a single family surname, and married-in spouses keep their own (a
+    different) surname. Only males continue the line (sons branch, daughters are
+    leaves), so descendants-from-the-founder reconstructs the entire tree. Sized
+    to span ~`generations` generations while staying small enough to render in
+    full (~400-500 members)."""
+    members, relations = [], []
+    member_id_start = family_id * 1000000
+    current_id = member_id_start
+    gender_of: dict[int, str] = {}
+
+    def make_member(gen: int, gender: str, in_bloodline: bool) -> int:
+        nonlocal current_id
+        if in_bloodline:
+            name = surname + fake.first_name()
+        else:
+            # married-in spouse keeps their own surname (must differ from family's)
+            ln = fake.last_name()
+            while ln == surname:
+                ln = fake.last_name()
+            name = ln + fake.first_name()
+        base_year = 1900 - (generations - gen) * 28
+        birth = base_year + random.randint(0, 18)
+        death = birth + random.randint(60, 92) if random.random() > 0.25 else None
+        members.append((current_id, family_id, name, gender, birth, death, gen))
+        gender_of[current_id] = gender
+        mid = current_id
+        current_id += 1
+        return mid
+
+    def add_spouse(a: int, b: int):
+        relations.append((family_id, a, b, 'SPOUSE'))
+
+    def add_parent_edge(parent_id: int, child_id: int, child_gender: str):
+        pg = gender_of[parent_id]
+        if pg == 'M':
+            rtype = 'PARENT_SON' if child_gender == 'M' else 'PARENT_DAUGHTER'
+        else:
+            rtype = 'MOTHER_SON' if child_gender == 'M' else 'MOTHER_DAUGHTER'
+        relations.append((family_id, parent_id, child_id, rtype))
+
+    # Gen 1: single founding patriarch (his wife is created by the loop below,
+    # like every other married-in spouse)
+    patriarch = make_member(1, 'M', True)
+    males_prev = [patriarch]   # only males carry the line forward
+    total = 1
+
+    for gen in range(2, generations + 1):
+        if not males_prev or total >= target_size:
+            break
+        males_next = []
+        for father in males_prev:
+            if total >= target_size:
+                break
+            mother = make_member(gen - 1, 'F', False)   # wife, same gen as husband
+            total += 1
+            add_spouse(father, mother)
+            # 1-3 children, weighted toward 2; the first child is always the male
+            # heir so the line never dies out — gives a steady, viewable branch.
+            n = random.choices([1, 2, 3], weights=[1, 3, 2])[0]
+            for i in range(n):
+                if total >= target_size:
+                    break
+                child_g = 'M' if (i == 0 or random.random() < 0.52) else 'F'
+                child = make_member(gen, child_g, True)
+                total += 1
+                add_parent_edge(father, child, child_g)
+                add_parent_edge(mother, child, child_g)
+                if child_g == 'M':
+                    males_next.append(child)
+        males_prev = males_next
+
+    return members, relations
+
 def generate_family(family_id: int, target_size: int, generations: int):
     """Generate a dense family tree: each child has both parents, couples have
     multiple children (siblings), spouses are linked with SPOUSE edges, and a
@@ -131,8 +209,15 @@ def setup_base_data(target_username='ica'):
         print(f"Created new user '{target_username}' with ID: {owner_id}")
 
     for fid in range(1, 11):
-        cur.execute("INSERT INTO families (id, name, owner_id) VALUES (%s, %s, %s) ON CONFLICT (id) DO NOTHING", 
-                    (fid, f'Family_{fid}', owner_id))
+        # Family 1 is the surname-organised showcase tree (张氏宗谱); the rest
+        # keep their generic names / mixed surnames.
+        if fid == 1:
+            name, surname = '张氏宗谱', '张'
+        else:
+            name, surname = f'Family_{fid}', None
+        cur.execute(
+            "INSERT INTO families (id, name, surname, owner_id) VALUES (%s, %s, %s, %s) ON CONFLICT (id) DO NOTHING",
+            (fid, name, surname, owner_id))
     conn.commit()
     return owner_id
 
@@ -157,8 +242,15 @@ target_user = 'ica'
 setup_base_data(target_user)
 
 for fid in range(1, 11):
-    target = 55000 if fid == 1 else random.randint(3000, 8000)
-    m, r = generate_family(fid, target, 32)
+    if fid == 1:
+        # Showcase family: clean 张氏 patriline, ~12 generations, fully viewable.
+        m, r = generate_showcase_family(fid, '张', generations=12, target_size=900)
+    elif fid == 2:
+        # Volume/depth family: carries the 10万级 data-volume requirement and the
+        # deep recursive-query demo (rendered as 10 generations in the UI).
+        m, r = generate_family(fid, 60000, 32)
+    else:
+        m, r = generate_family(fid, random.randint(3000, 8000), 32)
     bulk_insert(m, r)
     print(f'Family {fid}: {len(m)} members, {len(r)} relations')
 

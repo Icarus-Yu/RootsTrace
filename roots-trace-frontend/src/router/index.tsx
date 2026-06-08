@@ -6,6 +6,7 @@ import Dashboard from '../pages/Dashboard';
 import Families from '../pages/Families';
 import Members from '../pages/Members';
 import Queries from '../pages/Queries';
+import FamilyTreeView from '../pages/FamilyTreeView';
 import { useAuthStore } from '../store/authStore';
 
 // Private Route Wrapper
@@ -42,6 +43,10 @@ const router = createBrowserRouter([
       {
         path: 'families',
         element: <Families />,
+      },
+      {
+        path: 'tree',
+        element: <FamilyTreeView />,
       },
       {
         path: 'families/:id/members',

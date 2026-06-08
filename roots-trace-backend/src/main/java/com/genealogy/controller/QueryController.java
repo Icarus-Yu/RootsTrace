@@ -1,6 +1,8 @@
 package com.genealogy.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.genealogy.common.Result;
+import com.genealogy.dto.response.FamilyTreeVO;
 import com.genealogy.dto.response.MemberNodeVO;
 import com.genealogy.dto.response.RelationEdgeVO;
 import com.genealogy.entity.Member;
@@ -53,6 +55,63 @@ public class QueryController {
         }
         int safeDepth = Math.min(Math.max(depth, 1), 100);
         return Result.success(relationMapper.findAllDescendants(memberId, safeDepth));
+    }
+
+    /**
+     * Whole-family genealogy tree, rooted at the founding patriarch (lowest
+     * generation, smallest id). Small families come back in full; large ones
+     * are capped at 10 generations so the chart stays renderable. An explicit
+     * {@code depth} (1-100) overrides the automatic choice.
+     */
+    @GetMapping("/family-tree/{familyId}")
+    public Result<FamilyTreeVO> getFamilyTree(@PathVariable Long familyId,
+                                              @RequestParam(required = false) Integer depth,
+                                              Authentication authentication) {
+        AuthUserPrincipal currentUser = authContextService.getCurrentUser(authentication);
+        if (currentUser == null) {
+            return Result.error(401, "未登录或登录已过期");
+        }
+        if (!authContextService.canAccessFamily(familyId, currentUser)) {
+            return Result.error(403, "无权查询该族谱");
+        }
+
+        Long totalMembers = memberMapper.selectCount(
+                new QueryWrapper<Member>().eq("family_id", familyId));
+        if (totalMembers == null || totalMembers == 0) {
+            return Result.error(404, "该族谱暂无成员");
+        }
+
+        Member root = memberMapper.selectOne(
+                new QueryWrapper<Member>()
+                        .eq("family_id", familyId)
+                        .orderByAsc("generation")
+                        .orderByAsc("id")
+                        .last("LIMIT 1"));
+        if (root == null) {
+            return Result.error(404, "未找到族谱始祖");
+        }
+
+        boolean full;
+        int effectiveDepth;
+        if (depth != null) {
+            effectiveDepth = Math.min(Math.max(depth, 1), 100);
+            full = effectiveDepth >= 100;
+        } else {
+            // Small families render in full; large ones cap at 10 generations.
+            full = totalMembers <= 1500;
+            effectiveDepth = full ? 100 : 10;
+        }
+
+        List<MemberNodeVO> nodes = relationMapper.findAllDescendants(root.getId(), effectiveDepth);
+
+        FamilyTreeVO vo = new FamilyTreeVO();
+        vo.setFamilyId(familyId);
+        vo.setRootId(root.getId());
+        vo.setDepth(effectiveDepth);
+        vo.setFull(full);
+        vo.setTotalMembers(totalMembers);
+        vo.setNodes(nodes);
+        return Result.success(vo);
     }
 
     @GetMapping("/kinship")

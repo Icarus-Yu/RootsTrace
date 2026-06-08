@@ -6,6 +6,7 @@ import {
   SearchOutlined,
   LogoutOutlined,
   UserOutlined,
+  ApartmentOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '../../store/authStore';
 
@@ -31,6 +32,11 @@ const MainLayout = () => {
       key: '/families',
       icon: <TeamOutlined />,
       label: '族谱管理',
+    },
+    {
+      key: '/tree',
+      icon: <ApartmentOutlined />,
+      label: '族谱树',
     },
     {
       key: '/queries',

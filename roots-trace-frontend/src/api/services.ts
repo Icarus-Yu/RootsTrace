@@ -3,6 +3,7 @@ import type {
   ApiResult,
   DashboardData,
   Family,
+  FamilyTree,
   KinshipPath,
   Member,
   MemberNode,
@@ -89,4 +90,6 @@ export const queryApi = {
     unwrap<MemberNode[]>(api.get(`/query/descendants/${memberId}`, { params: { depth } })),
   kinship: (familyId: number, a: number, b: number) =>
     unwrap<KinshipPath>(api.get('/query/kinship', { params: { familyId, a, b } })),
+  familyTree: (familyId: number, depth?: number) =>
+    unwrap<FamilyTree>(api.get(`/query/family-tree/${familyId}`, { params: depth ? { depth } : undefined })),
 };

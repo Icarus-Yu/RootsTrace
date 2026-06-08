@@ -71,6 +71,15 @@ export interface KinshipPath {
   pathEdges?: string[];
 }
 
+export interface FamilyTree {
+  familyId: number;
+  rootId: number;
+  depth: number;
+  full: boolean;
+  totalMembers: number;
+  nodes: MemberNode[];
+}
+
 export interface DashboardStatItem {
   label: string;
   value: number;
